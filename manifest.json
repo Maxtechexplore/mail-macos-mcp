@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "mail-macos-mcp",
   "display_name": "Mail macOS",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pilote l'app Mail de macOS : lire, rechercher, créer des brouillons, envoyer et gérer ses mails depuis Claude.",
   "author": {
     "name": "Maxence"
@@ -20,8 +20,11 @@
     { "name": "lister_mails", "description": "Liste les derniers mails (filtre non lus / expéditeur)" },
     { "name": "rechercher_mails", "description": "Recherche dans les mails récents" },
     { "name": "lire_mail", "description": "Lit le contenu complet d'un mail" },
-    { "name": "creer_brouillon", "description": "Crée un brouillon sans l'envoyer" },
-    { "name": "envoyer_mail", "description": "Envoie un mail" },
+    { "name": "lister_comptes", "description": "Liste les comptes mail connectés" },
+    { "name": "creer_brouillon", "description": "Crée un brouillon (CC/CCI/expéditeur)" },
+    { "name": "envoyer_mail", "description": "Envoie un mail (CC/CCI/expéditeur)" },
+    { "name": "repondre_mail", "description": "Répond à un mail (brouillon par défaut)" },
+    { "name": "transferer_mail", "description": "Transfère un mail (brouillon par défaut)" },
     { "name": "marquer_mail", "description": "Marque un mail lu ou non lu" },
     { "name": "deplacer_mail", "description": "Déplace un mail vers un dossier" },
     { "name": "corbeille_mail", "description": "Met un mail à la corbeille (récupérable)" }

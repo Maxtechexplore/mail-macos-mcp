@@ -21,7 +21,7 @@ import { MailError } from "./applescript.js";
 
 const server = new McpServer({
   name: "mail-macos-mcp",
-  version: "1.0.0",
+  version: "1.1.0",
 });
 
 /** Type minimal du retour attendu par le SDK pour un outil. */

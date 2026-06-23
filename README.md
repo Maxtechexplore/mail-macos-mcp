@@ -59,14 +59,28 @@ Une fois installé, on parle simplement à Claude :
 | `lister_mails` | Liste les derniers mails (filtre non lus / expéditeur) | lecture seule |
 | `rechercher_mails` | Recherche dans les mails récents (sujet, expéditeur, corps en option) | lecture seule |
 | `lire_mail` | Renvoie le contenu complet d'un mail | lecture seule |
-| `creer_brouillon` | Crée un brouillon **sans l'envoyer** | non destructif |
-| `envoyer_mail` | Envoie un mail (Claude Desktop demande confirmation) | sortant |
+| `lister_comptes` | Liste les comptes mail connectés (nom et adresse(s)) | lecture seule |
+| `creer_brouillon` | Crée un brouillon **sans l'envoyer** (CC, CCI, expéditeur) | non destructif |
+| `envoyer_mail` | Envoie un mail (CC, CCI, expéditeur ; Claude Desktop demande confirmation) | sortant |
+| `repondre_mail` | Répond à un mail en reprenant le fil ; brouillon par défaut | non destructif |
+| `transferer_mail` | Transfère un mail vers un ou plusieurs destinataires ; brouillon par défaut | non destructif |
 | `marquer_mail` | Marque un mail lu / non lu | réversible |
 | `deplacer_mail` | Déplace un mail vers un dossier | réversible |
 | `corbeille_mail` | Met un mail à la **Corbeille** (récupérable) | récupérable |
 
 **Aucune suppression définitive** : le pire cas possible est un mail envoyé ou un
 mail en corbeille (récupérable depuis Mail).
+
+### Multi-comptes
+
+`lister_comptes` renvoie tous les comptes configurés dans l'app Mail, avec leur nom
+et leurs adresses email. Tous les outils de rédaction (`creer_brouillon`,
+`envoyer_mail`, `repondre_mail`, `transferer_mail`) acceptent un paramètre
+optionnel `expediteur` : si tu passes une adresse qui correspond a un compte
+connecte, Mail utilisera ce compte pour envoyer. Si le parametre est absent, Mail
+utilise le compte par defaut (ou le compte du mail d'origine pour les reponses).
+Utilise d'abord `lister_comptes` pour connaitre les adresses disponibles, puis
+precise `expediteur` si tu veux choisir le compte d'envoi.
 
 ---
 
@@ -93,7 +107,7 @@ npm install                                       # restaurer les deps de dev
 
 ```
 src/
-  index.ts        # serveur MCP : déclare les 8 outils (validation via zod)
+  index.ts        # serveur MCP : déclare les 11 outils (validation via zod)
   mail.ts         # logique métier : construit les scripts AppleScript
   applescript.ts  # exécution osascript + parsing + messages d'erreur FR
 ```
