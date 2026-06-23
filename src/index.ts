@@ -9,16 +9,19 @@ import {
   lireMail,
   creerBrouillon,
   envoyerMail,
+  repondreMail,
+  transfererMail,
   marquerMail,
   deplacerMail,
   mettreCorbeille,
+  listerComptes,
   type ResumeMail,
 } from "./mail.js";
 import { MailError } from "./applescript.js";
 
 const server = new McpServer({
   name: "mail-macos-mcp",
-  version: "1.0.0",
+  version: "1.1.0",
 });
 
 /** Type minimal du retour attendu par le SDK pour un outil. */
@@ -64,6 +67,26 @@ function formatResumes(mails: ResumeMail[]): string {
     )
     .join("\n\n");
 }
+
+// --- Comptes ---------------------------------------------------------------
+
+server.registerTool(
+  "lister_comptes",
+  {
+    title: "Lister les comptes",
+    description:
+      "Liste les comptes mail connectés à l'app Mail (nom et adresse(s) email). " +
+      "Utile pour savoir depuis quelle adresse écrire avant de créer un brouillon ou d'envoyer.",
+    inputSchema: {},
+  },
+  safe(async () => {
+    const comptes = await listerComptes();
+    if (comptes.length === 0) return texte("Aucun compte trouvé dans l'app Mail.");
+    return texte(
+      comptes.map((c) => `• ${c.nom} : ${c.emails.join(", ")}`).join("\n"),
+    );
+  }),
+);
 
 // --- Lecture ---------------------------------------------------------------
 
@@ -185,13 +208,14 @@ server.registerTool(
         .describe("Adresse(s) du/des destinataire(s), séparées par des virgules"),
       sujet: z.string().describe("Sujet du mail"),
       corps: z.string().describe("Corps du mail (texte)"),
+      cc: z.string().optional().describe("Adresse(s) en copie (CC), séparées par des virgules"),
+      cci: z.string().optional().describe("Adresse(s) en copie cachée (CCI), séparées par des virgules"),
+      expediteur: z.string().optional().describe("Adresse d'envoi (doit correspondre à un compte ; voir lister_comptes). Si absent, compte par défaut"),
     },
   },
-  safe(async ({ destinataire, sujet, corps }) => {
-    await creerBrouillon({ destinataire, sujet, corps });
-    return texte(
-      `Brouillon créé pour ${destinataire} (sujet : « ${sujet} »). Il est dans tes Brouillons, non envoyé.`,
-    );
+  safe(async ({ destinataire, sujet, corps, cc, cci, expediteur }) => {
+    await creerBrouillon({ destinataire, sujet, corps, cc, cci, expediteur });
+    return texte(`Brouillon créé pour ${destinataire} (sujet : « ${sujet} »). Il est dans tes Brouillons, non envoyé.`);
   }),
 );
 
@@ -210,11 +234,62 @@ server.registerTool(
         .describe("Adresse(s) du/des destinataire(s), séparées par des virgules"),
       sujet: z.string().describe("Sujet du mail"),
       corps: z.string().describe("Corps du mail (texte)"),
+      cc: z.string().optional().describe("Adresse(s) en copie (CC), séparées par des virgules"),
+      cci: z.string().optional().describe("Adresse(s) en copie cachée (CCI), séparées par des virgules"),
+      expediteur: z.string().optional().describe("Adresse d'envoi (doit correspondre à un compte ; voir lister_comptes). Si absent, compte par défaut"),
     },
   },
-  safe(async ({ destinataire, sujet, corps }) => {
-    await envoyerMail({ destinataire, sujet, corps });
+  safe(async ({ destinataire, sujet, corps, cc, cci, expediteur }) => {
+    await envoyerMail({ destinataire, sujet, corps, cc, cci, expediteur });
     return texte(`Mail envoyé à ${destinataire} (sujet : « ${sujet} »).`);
+  }),
+);
+
+server.registerTool(
+  "repondre_mail",
+  {
+    title: "Répondre à un mail",
+    description:
+      "Répond à un mail (par son identifiant) en reprenant le fil, le destinataire et " +
+      "l'objet « Re: ». Crée un BROUILLON par défaut (envoyer=false) ; mettre envoyer=true " +
+      "pour envoyer directement. repondre_a_tous inclut tous les destinataires d'origine.",
+    inputSchema: {
+      id: z.number().int().describe("Identifiant du mail auquel répondre"),
+      corps: z.string().describe("Texte de la réponse (ajouté au-dessus du message cité)"),
+      repondre_a_tous: z.boolean().default(false).describe("Répondre à tous les destinataires. Défaut : false"),
+      cc: z.string().optional().describe("Adresse(s) en copie (CC)"),
+      cci: z.string().optional().describe("Adresse(s) en copie cachée (CCI)"),
+      expediteur: z.string().optional().describe("Adresse d'envoi (voir lister_comptes). Si absent, Mail choisit le compte du mail d'origine"),
+      envoyer: z.boolean().default(false).describe("true = envoyer ; false = créer un brouillon (défaut)"),
+    },
+  },
+  safe(async ({ id, corps, repondre_a_tous, cc, cci, expediteur, envoyer }) => {
+    await repondreMail({ id, corps, repondreATous: repondre_a_tous, cc, cci, expediteur, envoyer });
+    return texte(envoyer ? `Réponse envoyée au mail ${id}.` : `Brouillon de réponse au mail ${id} créé (non envoyé).`);
+  }),
+);
+
+server.registerTool(
+  "transferer_mail",
+  {
+    title: "Transférer un mail",
+    description:
+      "Transfère un mail (par son identifiant) vers un ou plusieurs destinataires, " +
+      "en ajoutant l'en-tête « Message transféré » et le contenu d'origine. " +
+      "Crée un BROUILLON par défaut (envoyer=false) ; mettre envoyer=true pour envoyer directement.",
+    inputSchema: {
+      id: z.number().int().describe("Identifiant du mail à transférer"),
+      destinataire: z.string().describe("Adresse(s) du/des destinataire(s), séparées par des virgules"),
+      corps: z.string().optional().describe("Texte à ajouter avant le message transféré (optionnel)"),
+      cc: z.string().optional().describe("Adresse(s) en copie (CC), séparées par des virgules"),
+      cci: z.string().optional().describe("Adresse(s) en copie cachée (CCI), séparées par des virgules"),
+      expediteur: z.string().optional().describe("Adresse d'envoi (voir lister_comptes). Si absent, Mail choisit le compte par défaut"),
+      envoyer: z.boolean().default(false).describe("true = envoyer ; false = créer un brouillon (défaut)"),
+    },
+  },
+  safe(async ({ id, destinataire, corps, cc, cci, expediteur, envoyer }) => {
+    await transfererMail({ id, destinataire, corps, cc, cci, expediteur, envoyer });
+    return texte(envoyer ? `Mail ${id} transféré à ${destinataire}.` : `Brouillon de transfert du mail ${id} créé pour ${destinataire} (non envoyé).`);
   }),
 );
 
