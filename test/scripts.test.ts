@@ -7,6 +7,7 @@ import {
   recipientsBlock,
   buildComposeScript,
   buildRepondreScript,
+  buildTransfererScript,
 } from "../dist/scripts.js";
 
 test("buildListerScript: filtre tous n'ajoute pas de clause whose", () => {
@@ -98,4 +99,21 @@ test("buildRepondreScript: envoyer -> send, cc ajouté, pas de reply-all", () =>
   assert.ok(!s.includes("to recipients of m"));
   assert.ok(s.includes("make new cc recipient"));
   assert.ok(s.includes("send newMsg"));
+});
+
+test("buildTransfererScript: construit un transfert (Tr:, destinataire en to, save par défaut)", () => {
+  const s = buildTransfererScript({ id: 12, destinataire: "dest@x.com", action: "save" });
+  assert.ok(s.includes("findMessage(12)"));
+  assert.ok(s.includes("make new outgoing message"));
+  assert.ok(s.includes("Message transféré"));
+  assert.ok(s.includes('{address:"dest@x.com"}'));
+  assert.ok(s.includes("save newMsg"));
+});
+
+test("buildTransfererScript: corps optionnel préfixé seulement s'il est fourni; send", () => {
+  const sans = buildTransfererScript({ id: 1, destinataire: "d@x.com", action: "save" });
+  assert.ok(!sans.includes('set bodyText to "'));
+  const avec = buildTransfererScript({ id: 1, destinataire: "d@x.com", corps: "Voir ci-dessous", action: "send" });
+  assert.ok(avec.includes('set bodyText to "Voir ci-dessous"'));
+  assert.ok(avec.includes("send newMsg"));
 });

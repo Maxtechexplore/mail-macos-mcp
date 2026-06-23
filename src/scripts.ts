@@ -208,6 +208,27 @@ end tell
 `;
 }
 
+export function buildTransfererScript(o: { id: number; destinataire: string; corps?: string; cc?: string; cci?: string; expediteur?: string; action: "save" | "send" }): string {
+  const corpsPrefix = o.corps ? `${asStr(o.corps)} & linefeed & linefeed & ` : "";
+  return `${FIND_MESSAGE_HANDLER}
+set m to findMessage(${o.id})
+tell application "Mail"
+  set origSender to sender of m
+  set origSubject to subject of m
+  set origDate to (date received of m) as string
+  set subj to origSubject
+  if subj does not start with "Tr:" then set subj to "Tr: " & subj
+  set entete to "---------- Message transféré ----------" & linefeed & "De : " & origSender & linefeed & "Date : " & origDate & linefeed & "Objet : " & origSubject & linefeed & linefeed & (content of m)
+  set bodyText to ${corpsPrefix}entete
+  set newMsg to make new outgoing message with properties {subject:subj, content:bodyText, visible:false}
+  tell newMsg
+${recipientsBlock({ to: o.destinataire, cc: o.cc, cci: o.cci })}
+  end tell
+${senderLine(o.expediteur)}  ${o.action} newMsg
+end tell
+`;
+}
+
 export function buildListerComptesScript(): string {
   return `
 tell application "Mail"

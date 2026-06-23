@@ -10,6 +10,7 @@ import {
   creerBrouillon,
   envoyerMail,
   repondreMail,
+  transfererMail,
   marquerMail,
   deplacerMail,
   mettreCorbeille,
@@ -265,6 +266,30 @@ server.registerTool(
   safe(async ({ id, corps, repondre_a_tous, cc, cci, expediteur, envoyer }) => {
     await repondreMail({ id, corps, repondreATous: repondre_a_tous, cc, cci, expediteur, envoyer });
     return texte(envoyer ? `Réponse envoyée au mail ${id}.` : `Brouillon de réponse au mail ${id} créé (non envoyé).`);
+  }),
+);
+
+server.registerTool(
+  "transferer_mail",
+  {
+    title: "Transférer un mail",
+    description:
+      "Transfère un mail (par son identifiant) vers un ou plusieurs destinataires, " +
+      "en ajoutant l'en-tête « Message transféré » et le contenu d'origine. " +
+      "Crée un BROUILLON par défaut (envoyer=false) ; mettre envoyer=true pour envoyer directement.",
+    inputSchema: {
+      id: z.number().int().describe("Identifiant du mail à transférer"),
+      destinataire: z.string().describe("Adresse(s) du/des destinataire(s), séparées par des virgules"),
+      corps: z.string().optional().describe("Texte à ajouter avant le message transféré (optionnel)"),
+      cc: z.string().optional().describe("Adresse(s) en copie (CC), séparées par des virgules"),
+      cci: z.string().optional().describe("Adresse(s) en copie cachée (CCI), séparées par des virgules"),
+      expediteur: z.string().optional().describe("Adresse d'envoi (voir lister_comptes). Si absent, Mail choisit le compte par défaut"),
+      envoyer: z.boolean().default(false).describe("true = envoyer ; false = créer un brouillon (défaut)"),
+    },
+  },
+  safe(async ({ id, destinataire, corps, cc, cci, expediteur, envoyer }) => {
+    await transfererMail({ id, destinataire, corps, cc, cci, expediteur, envoyer });
+    return texte(envoyer ? `Mail ${id} transféré à ${destinataire}.` : `Brouillon de transfert du mail ${id} créé pour ${destinataire} (non envoyé).`);
   }),
 );
 
