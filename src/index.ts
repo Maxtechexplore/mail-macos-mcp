@@ -12,6 +12,7 @@ import {
   marquerMail,
   deplacerMail,
   mettreCorbeille,
+  listerComptes,
   type ResumeMail,
 } from "./mail.js";
 import { MailError } from "./applescript.js";
@@ -64,6 +65,26 @@ function formatResumes(mails: ResumeMail[]): string {
     )
     .join("\n\n");
 }
+
+// --- Comptes ---------------------------------------------------------------
+
+server.registerTool(
+  "lister_comptes",
+  {
+    title: "Lister les comptes",
+    description:
+      "Liste les comptes mail connectés à l'app Mail (nom et adresse(s) email). " +
+      "Utile pour savoir depuis quelle adresse écrire avant de créer un brouillon ou d'envoyer.",
+    inputSchema: {},
+  },
+  safe(async () => {
+    const comptes = await listerComptes();
+    if (comptes.length === 0) return texte("Aucun compte trouvé dans l'app Mail.");
+    return texte(
+      comptes.map((c) => `• ${c.nom} : ${c.emails.join(", ")}`).join("\n"),
+    );
+  }),
+);
 
 // --- Lecture ---------------------------------------------------------------
 

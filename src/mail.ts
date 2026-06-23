@@ -6,11 +6,13 @@ import {
   buildMarquerScript,
   buildDeplacerScript,
   buildCorbeilleScript,
+  buildListerComptesScript,
   recipientLines,
 } from "./scripts.js";
 
 export interface ResumeMail { id: number; expediteur: string; sujet: string; date: string; lu: boolean; }
 export interface MailComplet extends ResumeMail { corps: string; }
+export interface Compte { nom: string; emails: string[]; }
 
 export function parseResumes(raw: string): ResumeMail[] {
   if (!raw) return [];
@@ -25,6 +27,22 @@ export function parseResumes(raw: string): ResumeMail[] {
 
 export async function listerMails(opts: { filtre: "tous" | "non_lus"; expediteur?: string; limite: number }): Promise<ResumeMail[]> {
   return parseResumes(await runOsascript(buildListerScript(opts)));
+}
+
+export function parseComptes(raw: string): Compte[] {
+  if (!raw) return [];
+  return raw
+    .split(String.fromCharCode(30))
+    .filter((r) => r.length > 0)
+    .map((record) => {
+      const [nom, addrCsv] = record.split(FIELD_SEP);
+      const emails = (addrCsv ?? "").split(",").map((e) => e.trim()).filter((e) => e.length > 0);
+      return { nom: nom ?? "", emails };
+    });
+}
+
+export async function listerComptes(): Promise<Compte[]> {
+  return parseComptes(await runOsascript(buildListerComptesScript()));
 }
 
 export async function rechercherMails(opts: { motCle: string; expediteur?: string; depuisJours?: number; inclureCorps: boolean; limite: number }): Promise<ResumeMail[]> {

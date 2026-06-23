@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
-import { parseResumes } from "../dist/mail.js";
+import { parseResumes, parseComptes } from "../dist/mail.js";
 import { FIELD_SEP, RECORD_SEP } from "../dist/applescript.js";
 
 test("parseResumes: enregistrement simple", () => {
@@ -17,4 +17,17 @@ test("parseResumes: chaîne vide -> tableau vide", () => {
 test("parseResumes: lu=true correctement interprété", () => {
   const raw = ["1", "A", "S", "d", "true"].join(FIELD_SEP) + RECORD_SEP;
   assert.equal(parseResumes(raw)[0].lu, true);
+});
+
+test("parseComptes: un compte multi-adresses", () => {
+  const raw = ["Perso", "a@x.com, a2@x.com"].join(FIELD_SEP) + RECORD_SEP
+            + ["Pro", "b@y.com"].join(FIELD_SEP) + RECORD_SEP;
+  const c = parseComptes(raw);
+  assert.equal(c.length, 2);
+  assert.deepEqual(c[0], { nom: "Perso", emails: ["a@x.com", "a2@x.com"] });
+  assert.deepEqual(c[1], { nom: "Pro", emails: ["b@y.com"] });
+});
+
+test("parseComptes: vide -> tableau vide", () => {
+  assert.deepEqual(parseComptes(""), []);
 });

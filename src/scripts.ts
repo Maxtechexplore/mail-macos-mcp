@@ -159,3 +159,23 @@ tell application "Mail"
 end tell
 `;
 }
+
+export function buildListerComptesScript(): string {
+  return `
+tell application "Mail"
+  set FS to (character id 31)
+  set RS to (character id 30)
+  set output to ""
+  repeat with acct in accounts
+    set addrs to email addresses of acct
+    set addrStr to ""
+    repeat with a in addrs
+      if addrStr is not "" then set addrStr to addrStr & ", "
+      set addrStr to addrStr & a
+    end repeat
+    set output to output & (name of acct) & FS & addrStr & RS
+  end repeat
+  return output
+end tell
+`;
+}
