@@ -174,13 +174,36 @@ end tell
 
 export function buildRepondreScript(o: { id: number; corps: string; repondreATous: boolean; cc?: string; cci?: string; expediteur?: string; action: "save" | "send" }): string {
   const extra = extraRecipientsBlock(o.cc, o.cci);
-  const extraBlock = extra ? `  tell newMsg\n${extra}\n  end tell\n` : "";
+  const extraBlock = extra ? `${extra}\n` : "";
+  const replyAllBlock = o.repondreATous
+    ? `  repeat with r in (to recipients of m)
+    try
+      make new cc recipient at end of cc recipients of newMsg with properties {address:(address of r)}
+    end try
+  end repeat
+  repeat with r in (cc recipients of m)
+    try
+      make new cc recipient at end of cc recipients of newMsg with properties {address:(address of r)}
+    end try
+  end repeat
+`
+    : "";
   return `${FIND_MESSAGE_HANDLER}
 set m to findMessage(${o.id})
 tell application "Mail"
-  set newMsg to reply m opening window false reply to all ${o.repondreATous ? "true" : "false"}
-  set content of newMsg to ${asStr(o.corps)} & linefeed & linefeed & (content of newMsg)
-${extraBlock}${senderLine(o.expediteur)}  ${o.action} newMsg
+  set origSender to sender of m
+  set origSubject to subject of m
+  set origDate to (date received of m) as string
+  set replyAddr to extract address from origSender
+  set subj to origSubject
+  if subj does not start with "Re:" then set subj to "Re: " & subj
+  set quoted to "Le " & origDate & ", " & origSender & " a écrit :" & linefeed & (content of m)
+  set bodyText to ${asStr(o.corps)} & linefeed & linefeed & quoted
+  set newMsg to make new outgoing message with properties {subject:subj, content:bodyText, visible:false}
+  tell newMsg
+    make new to recipient at end of to recipients with properties {address:replyAddr}
+${extraBlock}  end tell
+${replyAllBlock}${senderLine(o.expediteur)}  ${o.action} newMsg
 end tell
 `;
 }

@@ -83,17 +83,19 @@ test("buildComposeScript: sans expediteur ne pose pas de sender", () => {
   assert.ok(!s.includes("set sender of newMsg"));
 });
 
-test("buildRepondreScript: utilise reply, préfixe le corps et respecte reply to all", () => {
+test("buildRepondreScript: construit une réponse (Re:, destinataire extrait, corps préfixé, reply-all)", () => {
   const s = buildRepondreScript({ id: 7, corps: "Bonjour", repondreATous: true, action: "save" });
   assert.ok(s.includes("findMessage(7)"));
-  assert.ok(s.includes("reply m opening window false reply to all true"));
-  assert.ok(s.includes('set content of newMsg to "Bonjour"'));
-  assert.ok(s.trimEnd().includes("save newMsg"));
+  assert.ok(s.includes("extract address from origSender"));
+  assert.ok(s.includes("make new outgoing message"));
+  assert.ok(s.includes('set bodyText to "Bonjour"'));
+  assert.ok(s.includes("to recipients of m"));
+  assert.ok(s.includes("save newMsg"));
 });
 
-test("buildRepondreScript: envoyer -> send, et cc ajouté", () => {
+test("buildRepondreScript: envoyer -> send, cc ajouté, pas de reply-all", () => {
   const s = buildRepondreScript({ id: 9, corps: "X", repondreATous: false, cc: "c@x.com", action: "send" });
-  assert.ok(s.includes("reply to all false"));
+  assert.ok(!s.includes("to recipients of m"));
   assert.ok(s.includes("make new cc recipient"));
-  assert.ok(s.trimEnd().includes("send newMsg"));
+  assert.ok(s.includes("send newMsg"));
 });
