@@ -76,11 +76,11 @@ mail en corbeille (récupérable depuis Mail).
 `lister_comptes` renvoie tous les comptes configurés dans l'app Mail, avec leur nom
 et leurs adresses email. Tous les outils de rédaction (`creer_brouillon`,
 `envoyer_mail`, `repondre_mail`, `transferer_mail`) acceptent un paramètre
-optionnel `expediteur` : si tu passes une adresse qui correspond a un compte
-connecte, Mail utilisera ce compte pour envoyer. Si le parametre est absent, Mail
-utilise le compte par defaut (ou le compte du mail d'origine pour les reponses).
-Utilise d'abord `lister_comptes` pour connaitre les adresses disponibles, puis
-precise `expediteur` si tu veux choisir le compte d'envoi.
+optionnel `expediteur` : si tu passes une adresse qui correspond à un compte
+connecté, Mail utilisera ce compte pour envoyer. Si le paramètre est absent, Mail
+utilise le compte par défaut (ou le compte du mail d'origine pour les réponses).
+Utilise d'abord `lister_comptes` pour connaître les adresses disponibles, puis
+précise `expediteur` si tu veux choisir le compte d'envoi.
 
 ---
 
