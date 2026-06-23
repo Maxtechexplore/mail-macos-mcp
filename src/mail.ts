@@ -1,4 +1,4 @@
-import { runOsascript, FIELD_SEP, asStr, MailError } from "./applescript.js";
+import { runOsascript, FIELD_SEP, MailError } from "./applescript.js";
 import {
   buildListerScript,
   buildRechercherScript,
@@ -7,7 +7,7 @@ import {
   buildDeplacerScript,
   buildCorbeilleScript,
   buildListerComptesScript,
-  recipientLines,
+  buildComposeScript,
 } from "./scripts.js";
 
 export interface ResumeMail { id: number; expediteur: string; sujet: string; date: string; lu: boolean; }
@@ -67,40 +67,18 @@ export async function mettreCorbeille(id: number): Promise<void> {
   await runOsascript(buildCorbeilleScript(id));
 }
 
+interface ComposeOpts { destinataire: string; sujet: string; corps: string; cc?: string; cci?: string; expediteur?: string; }
+
 /** Crée un brouillon dans Mail (sans l'envoyer). */
-export async function creerBrouillon(opts: {
-  destinataire: string;
-  sujet: string;
-  corps: string;
-}): Promise<void> {
-  const script = `
-tell application "Mail"
-  set newMsg to make new outgoing message with properties {subject:${asStr(opts.sujet)}, content:${asStr(opts.corps)}, visible:false}
-  tell newMsg
-${recipientLines(opts.destinataire, "to")}
-  end tell
-  save newMsg
-end tell
-`;
-  await runOsascript(script);
+export async function creerBrouillon(o: ComposeOpts): Promise<void> {
+  const expediteur = await resolveExpediteurMaybe(o.expediteur);
+  await runOsascript(buildComposeScript({ ...o, expediteur, action: "save" }));
 }
 
 /** Envoie un mail. A utiliser avec précaution (action sortante). */
-export async function envoyerMail(opts: {
-  destinataire: string;
-  sujet: string;
-  corps: string;
-}): Promise<void> {
-  const script = `
-tell application "Mail"
-  set newMsg to make new outgoing message with properties {subject:${asStr(opts.sujet)}, content:${asStr(opts.corps)}, visible:false}
-  tell newMsg
-${recipientLines(opts.destinataire, "to")}
-  end tell
-  send newMsg
-end tell
-`;
-  await runOsascript(script);
+export async function envoyerMail(o: ComposeOpts): Promise<void> {
+  const expediteur = await resolveExpediteurMaybe(o.expediteur);
+  await runOsascript(buildComposeScript({ ...o, expediteur, action: "send" }));
 }
 
 export function resolveExpediteur(expediteur: string, comptes: Compte[]): string {

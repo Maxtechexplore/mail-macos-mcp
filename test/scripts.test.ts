@@ -5,6 +5,7 @@ import {
   buildRechercherScript,
   buildLireScript,
   recipientsBlock,
+  buildComposeScript,
 } from "../dist/scripts.js";
 
 test("buildListerScript: filtre tous n'ajoute pas de clause whose", () => {
@@ -54,4 +55,29 @@ test("recipientsBlock: plusieurs destinataires", () => {
 
 test("recipientsBlock: aucun destinataire lève une erreur", () => {
   assert.throws(() => recipientsBlock({ to: "   " }));
+});
+
+test("buildComposeScript: save vs send", () => {
+  const draft = buildComposeScript({ destinataire: "a@x.com", sujet: "S", corps: "B", action: "save" });
+  assert.ok(draft.trimEnd().includes("save newMsg"));
+  const sent = buildComposeScript({ destinataire: "a@x.com", sujet: "S", corps: "B", action: "send" });
+  assert.ok(sent.trimEnd().includes("send newMsg"));
+});
+
+test("buildComposeScript: cc et cci ajoutent les bons recipients", () => {
+  const s = buildComposeScript({ destinataire: "a@x.com", sujet: "S", corps: "B", cc: "c@x.com", cci: "d@x.com", action: "save" });
+  assert.ok(s.includes("make new cc recipient"));
+  assert.ok(s.includes('{address:"c@x.com"}'));
+  assert.ok(s.includes("make new bcc recipient"));
+  assert.ok(s.includes('{address:"d@x.com"}'));
+});
+
+test("buildComposeScript: expediteur pose le sender", () => {
+  const s = buildComposeScript({ destinataire: "a@x.com", sujet: "S", corps: "B", expediteur: "me@x.com", action: "send" });
+  assert.ok(s.includes('set sender of newMsg to "me@x.com"'));
+});
+
+test("buildComposeScript: sans expediteur ne pose pas de sender", () => {
+  const s = buildComposeScript({ destinataire: "a@x.com", sujet: "S", corps: "B", action: "save" });
+  assert.ok(!s.includes("set sender of newMsg"));
 });

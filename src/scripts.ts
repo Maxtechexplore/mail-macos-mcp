@@ -43,6 +43,18 @@ export function senderLine(adresse?: string): string {
   return adresse ? `  set sender of newMsg to ${asStr(adresse)}\n` : "";
 }
 
+export function buildComposeScript(o: { destinataire: string; sujet: string; corps: string; cc?: string; cci?: string; expediteur?: string; action: "save" | "send" }): string {
+  return `
+tell application "Mail"
+  set newMsg to make new outgoing message with properties {subject:${asStr(o.sujet)}, content:${asStr(o.corps)}, visible:false}
+  tell newMsg
+${recipientsBlock({ to: o.destinataire, cc: o.cc, cci: o.cci })}
+  end tell
+${senderLine(o.expediteur)}  ${o.action} newMsg
+end tell
+`;
+}
+
 export function buildListerScript(o: { filtre: "tous" | "non_lus"; expediteur?: string; limite: number }): string {
   const conditions: string[] = [];
   if (o.filtre === "non_lus") conditions.push("read status is false");

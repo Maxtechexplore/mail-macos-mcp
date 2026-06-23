@@ -206,13 +206,14 @@ server.registerTool(
         .describe("Adresse(s) du/des destinataire(s), séparées par des virgules"),
       sujet: z.string().describe("Sujet du mail"),
       corps: z.string().describe("Corps du mail (texte)"),
+      cc: z.string().optional().describe("Adresse(s) en copie (CC), séparées par des virgules"),
+      cci: z.string().optional().describe("Adresse(s) en copie cachée (CCI), séparées par des virgules"),
+      expediteur: z.string().optional().describe("Adresse d'envoi (doit correspondre à un compte ; voir lister_comptes). Si absent, compte par défaut"),
     },
   },
-  safe(async ({ destinataire, sujet, corps }) => {
-    await creerBrouillon({ destinataire, sujet, corps });
-    return texte(
-      `Brouillon créé pour ${destinataire} (sujet : « ${sujet} »). Il est dans tes Brouillons, non envoyé.`,
-    );
+  safe(async ({ destinataire, sujet, corps, cc, cci, expediteur }) => {
+    await creerBrouillon({ destinataire, sujet, corps, cc, cci, expediteur });
+    return texte(`Brouillon créé pour ${destinataire} (sujet : « ${sujet} »). Il est dans tes Brouillons, non envoyé.`);
   }),
 );
 
@@ -231,10 +232,13 @@ server.registerTool(
         .describe("Adresse(s) du/des destinataire(s), séparées par des virgules"),
       sujet: z.string().describe("Sujet du mail"),
       corps: z.string().describe("Corps du mail (texte)"),
+      cc: z.string().optional().describe("Adresse(s) en copie (CC), séparées par des virgules"),
+      cci: z.string().optional().describe("Adresse(s) en copie cachée (CCI), séparées par des virgules"),
+      expediteur: z.string().optional().describe("Adresse d'envoi (doit correspondre à un compte ; voir lister_comptes). Si absent, compte par défaut"),
     },
   },
-  safe(async ({ destinataire, sujet, corps }) => {
-    await envoyerMail({ destinataire, sujet, corps });
+  safe(async ({ destinataire, sujet, corps, cc, cci, expediteur }) => {
+    await envoyerMail({ destinataire, sujet, corps, cc, cci, expediteur });
     return texte(`Mail envoyé à ${destinataire} (sujet : « ${sujet} »).`);
   }),
 );
