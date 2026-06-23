@@ -1,0 +1,35 @@
+{
+  "manifest_version": "0.3",
+  "name": "mail-macos-mcp",
+  "display_name": "Mail macOS",
+  "version": "1.0.0",
+  "description": "Pilote l'app Mail de macOS : lire, rechercher, créer des brouillons, envoyer et gérer ses mails depuis Claude.",
+  "author": {
+    "name": "Maxence"
+  },
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"]
+    }
+  },
+  "tools": [
+    { "name": "lister_mails", "description": "Liste les derniers mails (filtre non lus / expéditeur)" },
+    { "name": "rechercher_mails", "description": "Recherche dans les mails récents" },
+    { "name": "lire_mail", "description": "Lit le contenu complet d'un mail" },
+    { "name": "creer_brouillon", "description": "Crée un brouillon sans l'envoyer" },
+    { "name": "envoyer_mail", "description": "Envoie un mail" },
+    { "name": "marquer_mail", "description": "Marque un mail lu ou non lu" },
+    { "name": "deplacer_mail", "description": "Déplace un mail vers un dossier" },
+    { "name": "corbeille_mail", "description": "Met un mail à la corbeille (récupérable)" }
+  ],
+  "compatibility": {
+    "platforms": ["darwin"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}

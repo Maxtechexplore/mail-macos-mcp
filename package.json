@@ -1,0 +1,28 @@
+{
+  "name": "mail-macos-mcp",
+  "version": "1.0.0",
+  "description": "Serveur MCP pour piloter l'app Mail de macOS : lire, rechercher, brouillons, envoi et gestion des mails.",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Maxence"
+  },
+  "bin": {
+    "mail-macos-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.0"
+  }
+}
