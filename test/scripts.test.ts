@@ -92,6 +92,9 @@ test("buildRepondreScript: construit une réponse (Re:, destinataire extrait, co
   assert.ok(s.includes('set bodyText to "Bonjour"'));
   assert.ok(s.includes("to recipients of m"));
   assert.ok(s.includes("save newMsg"));
+  assert.ok(s.includes("ownAddrs"));
+  assert.ok(s.includes("ra is not replyAddr"));
+  assert.ok(s.includes("ownAddrs does not contain ra"));
 });
 
 test("buildRepondreScript: envoyer -> send, cc ajouté, pas de reply-all", () => {

@@ -176,15 +176,19 @@ export function buildRepondreScript(o: { id: number; corps: string; repondreATou
   const extra = extraRecipientsBlock(o.cc, o.cci);
   const extraBlock = extra ? `${extra}\n` : "";
   const replyAllBlock = o.repondreATous
-    ? `  repeat with r in (to recipients of m)
-    try
-      make new cc recipient at end of cc recipients of newMsg with properties {address:(address of r)}
-    end try
+    ? `  set ownAddrs to {}
+  repeat with acct in accounts
+    repeat with a in (email addresses of acct)
+      set end of ownAddrs to (a as string)
+    end repeat
   end repeat
-  repeat with r in (cc recipients of m)
-    try
-      make new cc recipient at end of cc recipients of newMsg with properties {address:(address of r)}
-    end try
+  repeat with r in ((to recipients of m) & (cc recipients of m))
+    set ra to (address of r)
+    if (ra is not replyAddr) and (ownAddrs does not contain ra) then
+      try
+        make new cc recipient at end of cc recipients of newMsg with properties {address:ra}
+      end try
+    end if
   end repeat
 `
     : "";
