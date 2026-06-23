@@ -1,4 +1,4 @@
-import { runOsascript, FIELD_SEP, asStr } from "./applescript.js";
+import { runOsascript, FIELD_SEP, asStr, MailError } from "./applescript.js";
 import {
   buildListerScript,
   buildRechercherScript,
@@ -101,4 +101,20 @@ ${recipientLines(opts.destinataire, "to")}
 end tell
 `;
   await runOsascript(script);
+}
+
+export function resolveExpediteur(expediteur: string, comptes: Compte[]): string {
+  const cible = expediteur.trim().toLowerCase();
+  for (const c of comptes) {
+    for (const e of c.emails) {
+      if (e.trim().toLowerCase() === cible) return e.trim();
+    }
+  }
+  const dispo = comptes.flatMap((c) => c.emails).join(", ");
+  throw new MailError(`Adresse expéditrice « ${expediteur} » inconnue. Comptes disponibles : ${dispo || "(aucun)"}.`);
+}
+
+async function resolveExpediteurMaybe(expediteur?: string): Promise<string | undefined> {
+  if (!expediteur) return undefined;
+  return resolveExpediteur(expediteur, await listerComptes());
 }
