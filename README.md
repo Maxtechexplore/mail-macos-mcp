@@ -16,13 +16,18 @@ Aucune compétence technique requise, pas de terminal, pas de Node à installer.
    👉 **[Télécharger la dernière version](https://github.com/Maxtechexplore/mail-macos-mcp/releases/latest/download/mail-macos.mcpb)**
 
 2. **Installer dans Claude Desktop** :
-   - Ouvrir **Claude Desktop**
-   - Menu ☰ (en haut à gauche) → **Réglages** → **Extensions**
-   - **Glisser-déposer** le fichier `mail-macos.mcpb` sur la page Extensions
-   - Cliquer **Installer**
+   - D'abord, **mettre Claude Desktop à jour** (dernière version requise).
+   - Aller dans **Réglages → Extensions**
+   - Cliquer **« Advanced settings » / Paramètres avancés**
+   - Dans la section **« Extension Developer »**, cliquer **« Install Extension… »**
+   - Sélectionner le fichier `mail-macos.mcpb` téléchargé
    - Un avertissement « développeur non vérifié » peut s'afficher : c'est normal
      (l'extension n'est pas signée par un éditeur commercial). Cliquer **Installer**
      quand même.
+
+   > Le glisser-déposer fonctionne surtout pour les extensions du répertoire officiel
+   > d'Anthropic ; pour ce bundle privé, utiliser le bouton **« Install Extension… »**
+   > via les paramètres avancés.
 
 3. **Autoriser l'accès à Mail** :
    Au **premier usage**, macOS demande : *« Claude souhaite contrôler Mail »*.
