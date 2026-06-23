@@ -178,9 +178,7 @@ export function buildRepondreScript(o: { id: number; corps: string; repondreATou
   const replyAllBlock = o.repondreATous
     ? `  set ownAddrs to {}
   repeat with acct in accounts
-    repeat with a in (email addresses of acct)
-      set end of ownAddrs to (a as string)
-    end repeat
+    set ownAddrs to ownAddrs & (email addresses of acct)
   end repeat
   repeat with r in ((to recipients of m) & (cc recipients of m))
     set ra to (address of r)
