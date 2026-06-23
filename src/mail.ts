@@ -8,6 +8,7 @@ import {
   buildCorbeilleScript,
   buildListerComptesScript,
   buildComposeScript,
+  buildRepondreScript,
 } from "./scripts.js";
 
 export interface ResumeMail { id: number; expediteur: string; sujet: string; date: string; lu: boolean; }
@@ -95,4 +96,9 @@ export function resolveExpediteur(expediteur: string, comptes: Compte[]): string
 async function resolveExpediteurMaybe(expediteur?: string): Promise<string | undefined> {
   if (!expediteur) return undefined;
   return resolveExpediteur(expediteur, await listerComptes());
+}
+
+export async function repondreMail(o: { id: number; corps: string; repondreATous: boolean; cc?: string; cci?: string; expediteur?: string; envoyer: boolean }): Promise<void> {
+  const expediteur = await resolveExpediteurMaybe(o.expediteur);
+  await runOsascript(buildRepondreScript({ ...o, expediteur, action: o.envoyer ? "send" : "save" }));
 }

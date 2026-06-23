@@ -6,6 +6,7 @@ import {
   buildLireScript,
   recipientsBlock,
   buildComposeScript,
+  buildRepondreScript,
 } from "../dist/scripts.js";
 
 test("buildListerScript: filtre tous n'ajoute pas de clause whose", () => {
@@ -80,4 +81,19 @@ test("buildComposeScript: expediteur pose le sender", () => {
 test("buildComposeScript: sans expediteur ne pose pas de sender", () => {
   const s = buildComposeScript({ destinataire: "a@x.com", sujet: "S", corps: "B", action: "save" });
   assert.ok(!s.includes("set sender of newMsg"));
+});
+
+test("buildRepondreScript: utilise reply, préfixe le corps et respecte reply to all", () => {
+  const s = buildRepondreScript({ id: 7, corps: "Bonjour", repondreATous: true, action: "save" });
+  assert.ok(s.includes("findMessage(7)"));
+  assert.ok(s.includes("reply m opening window false reply to all true"));
+  assert.ok(s.includes('set content of newMsg to "Bonjour"'));
+  assert.ok(s.trimEnd().includes("save newMsg"));
+});
+
+test("buildRepondreScript: envoyer -> send, et cc ajouté", () => {
+  const s = buildRepondreScript({ id: 9, corps: "X", repondreATous: false, cc: "c@x.com", action: "send" });
+  assert.ok(s.includes("reply to all false"));
+  assert.ok(s.includes("make new cc recipient"));
+  assert.ok(s.trimEnd().includes("send newMsg"));
 });

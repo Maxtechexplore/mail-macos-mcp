@@ -9,6 +9,7 @@ import {
   lireMail,
   creerBrouillon,
   envoyerMail,
+  repondreMail,
   marquerMail,
   deplacerMail,
   mettreCorbeille,
@@ -240,6 +241,30 @@ server.registerTool(
   safe(async ({ destinataire, sujet, corps, cc, cci, expediteur }) => {
     await envoyerMail({ destinataire, sujet, corps, cc, cci, expediteur });
     return texte(`Mail envoyé à ${destinataire} (sujet : « ${sujet} »).`);
+  }),
+);
+
+server.registerTool(
+  "repondre_mail",
+  {
+    title: "Répondre à un mail",
+    description:
+      "Répond à un mail (par son identifiant) en reprenant le fil, le destinataire et " +
+      "l'objet « Re: ». Crée un BROUILLON par défaut (envoyer=false) ; mettre envoyer=true " +
+      "pour envoyer directement. repondre_a_tous inclut tous les destinataires d'origine.",
+    inputSchema: {
+      id: z.number().int().describe("Identifiant du mail auquel répondre"),
+      corps: z.string().describe("Texte de la réponse (ajouté au-dessus du message cité)"),
+      repondre_a_tous: z.boolean().default(false).describe("Répondre à tous les destinataires. Défaut : false"),
+      cc: z.string().optional().describe("Adresse(s) en copie (CC)"),
+      cci: z.string().optional().describe("Adresse(s) en copie cachée (CCI)"),
+      expediteur: z.string().optional().describe("Adresse d'envoi (voir lister_comptes). Si absent, Mail choisit le compte du mail d'origine"),
+      envoyer: z.boolean().default(false).describe("true = envoyer ; false = créer un brouillon (défaut)"),
+    },
+  },
+  safe(async ({ id, corps, repondre_a_tous, cc, cci, expediteur, envoyer }) => {
+    await repondreMail({ id, corps, repondreATous: repondre_a_tous, cc, cci, expediteur, envoyer });
+    return texte(envoyer ? `Réponse envoyée au mail ${id}.` : `Brouillon de réponse au mail ${id} créé (non envoyé).`);
   }),
 );
 

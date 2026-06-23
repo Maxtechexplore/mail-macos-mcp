@@ -172,6 +172,19 @@ end tell
 `;
 }
 
+export function buildRepondreScript(o: { id: number; corps: string; repondreATous: boolean; cc?: string; cci?: string; expediteur?: string; action: "save" | "send" }): string {
+  const extra = extraRecipientsBlock(o.cc, o.cci);
+  const extraBlock = extra ? `  tell newMsg\n${extra}\n  end tell\n` : "";
+  return `${FIND_MESSAGE_HANDLER}
+set m to findMessage(${o.id})
+tell application "Mail"
+  set newMsg to reply m opening window false reply to all ${o.repondreATous ? "true" : "false"}
+  set content of newMsg to ${asStr(o.corps)} & linefeed & linefeed & (content of newMsg)
+${extraBlock}${senderLine(o.expediteur)}  ${o.action} newMsg
+end tell
+`;
+}
+
 export function buildListerComptesScript(): string {
   return `
 tell application "Mail"
