@@ -15,13 +15,14 @@ import {
   deplacerMail,
   mettreCorbeille,
   listerComptes,
+  testerAcces,
   type ResumeMail,
 } from "./mail.js";
 import { MailError } from "./applescript.js";
 
 const server = new McpServer({
   name: "mail-macos-mcp",
-  version: "1.1.0",
+  version: "1.1.1",
 });
 
 /** Type minimal du retour attendu par le SDK pour un outil. */
@@ -67,6 +68,27 @@ function formatResumes(mails: ResumeMail[]): string {
     )
     .join("\n\n");
 }
+
+// --- Diagnostic ------------------------------------------------------------
+
+server.registerTool(
+  "tester_acces",
+  {
+    title: "Tester l'accès à Mail",
+    description:
+      "Vérifie rapidement que Claude peut contrôler l'app Mail, sans toucher aux messages. " +
+      "Utile en cas de problème : si cet outil répond, l'autorisation et l'accès sont OK ; " +
+      "sinon le message d'erreur indique quoi faire.",
+    inputSchema: {},
+  },
+  safe(async () => {
+    const comptes = await testerAcces();
+    if (comptes.length === 0) {
+      return texte("Accès à Mail OK, mais aucun compte n'est configuré dans l'app Mail.");
+    }
+    return texte(`Accès à Mail OK. Comptes détectés : ${comptes.join(", ")}.`);
+  }),
+);
 
 // --- Comptes ---------------------------------------------------------------
 

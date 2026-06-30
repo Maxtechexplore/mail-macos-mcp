@@ -10,21 +10,39 @@ import {
   buildTransfererScript,
 } from "../dist/scripts.js";
 
-test("buildListerScript: filtre tous n'ajoute pas de clause whose", () => {
+test("buildListerScript: lecture bornée et indexée, sans count ni whose", () => {
   const s = buildListerScript({ filtre: "tous", limite: 10 });
-  assert.ok(s.includes("messages of inbox"));
+  assert.ok(s.includes("item i of theMessages"));
+  assert.ok(s.includes("on error"));
+  assert.ok(!s.includes("count of"));
   assert.ok(!s.includes("whose"));
   assert.ok(s.includes("set maxN to 10"));
 });
 
-test("buildListerScript: non_lus ajoute read status is false", () => {
+test("buildListerScript: non_lus filtre read status dans la boucle (pas de whose)", () => {
   const s = buildListerScript({ filtre: "non_lus", limite: 5 });
-  assert.ok(s.includes("read status is false"));
+  assert.ok(s.includes("(read status of m) is true then set keep to false"));
+  assert.ok(!s.includes("whose"));
 });
 
-test("buildListerScript: expediteur ajoute sender contains", () => {
+test("buildListerScript: expediteur filtre dans la boucle (pas de whose)", () => {
   const s = buildListerScript({ filtre: "tous", expediteur: "bob@x.com", limite: 3 });
-  assert.ok(s.includes('sender contains "bob@x.com"'));
+  assert.ok(s.includes('sender of m does not contain "bob@x.com"'));
+  assert.ok(!s.includes("whose"));
+});
+
+test("buildRechercherScript: indexé et borné, sans count", () => {
+  const s = buildRechercherScript({ motCle: "x", inclureCorps: false, limite: 10 });
+  assert.ok(s.includes("item i of theMessages"));
+  assert.ok(s.includes("on error"));
+  assert.ok(!s.includes("count of"));
+});
+
+test("findMessage (via buildLireScript): borné à la boîte de réception, sans scan des dossiers", () => {
+  const s = buildLireScript(7);
+  assert.ok(s.includes("item i of theMessages"));
+  assert.ok(!s.includes("mailboxes of acct"));
+  assert.ok(!s.includes("whose id is"));
 });
 
 test("buildRechercherScript: inclureCorps ajoute content of m contains", () => {

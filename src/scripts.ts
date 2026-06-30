@@ -1,15 +1,20 @@
 import { asStr, MailError } from "./applescript.js";
 
+// Recherche bornée dans la boîte de réception uniquement, par accès indexé.
+// Les identifiants proviennent toujours d'un lister/rechercher (donc de la boîte
+// de réception). On évite tout `whose` et tout parcours des dossiers serveur, qui
+// peuvent figer Mail sur un gros compte synchronisé.
 export const FIND_MESSAGE_HANDLER = `
 on findMessage(theId)
   tell application "Mail"
-    set hits to (messages of inbox whose id is theId)
-    if (count of hits) > 0 then return item 1 of hits
-    repeat with acct in accounts
-      repeat with mb in mailboxes of acct
-        set hits to (messages of mb whose id is theId)
-        if (count of hits) > 0 then return item 1 of hits
-      end repeat
+    set theMessages to messages of inbox
+    repeat with i from 1 to 200
+      try
+        set m to item i of theMessages
+      on error
+        exit repeat
+      end try
+      if (id of m) is theId then return m
     end repeat
     error "NOT_FOUND"
   end tell
@@ -56,22 +61,33 @@ end tell
 }
 
 export function buildListerScript(o: { filtre: "tous" | "non_lus"; expediteur?: string; limite: number }): string {
-  const conditions: string[] = [];
-  if (o.filtre === "non_lus") conditions.push("read status is false");
-  if (o.expediteur) conditions.push(`sender contains ${asStr(o.expediteur)}`);
-  const whose = conditions.length > 0 ? ` whose ${conditions.join(" and ")}` : "";
+  const nonLus = o.filtre === "non_lus" ? `    if (read status of m) is true then set keep to false\n` : "";
+  const expediteurCheck = o.expediteur
+    ? `    if keep and (sender of m does not contain ${asStr(o.expediteur)}) then set keep to false\n`
+    : "";
+  // Borne de scan : pour "tous" sans filtre, on s'arrête à maxN ; sinon on
+  // parcourt une fenêtre récente bornée pour trouver maxN correspondances.
+  const scanBound = o.filtre === "non_lus" || o.expediteur ? 120 : o.limite;
   return `
 tell application "Mail"
   set FS to (character id 31)
   set RS to (character id 30)
-  set theMessages to (messages of inbox${whose})
-  set total to count of theMessages
-  set maxN to ${o.limite}
-  if total < maxN then set maxN to total
+  set theMessages to messages of inbox
   set output to ""
-  repeat with i from 1 to maxN
-    set m to item i of theMessages
-    set output to output & (id of m) & FS & (sender of m) & FS & (subject of m) & FS & ((date received of m) as string) & FS & (read status of m) & RS
+  set found to 0
+  set maxN to ${o.limite}
+  repeat with i from 1 to ${scanBound}
+    if found ≥ maxN then exit repeat
+    try
+      set m to item i of theMessages
+    on error
+      exit repeat
+    end try
+    set keep to true
+${nonLus}${expediteurCheck}    if keep then
+      set output to output & (id of m) & FS & (sender of m) & FS & (subject of m) & FS & ((date received of m) as string) & FS & (read status of m) & RS
+      set found to found + 1
+    end if
   end repeat
   return output
 end tell
@@ -85,35 +101,36 @@ export function buildRechercherScript(o: { motCle: string; expediteur?: string; 
       try
         if (content of m contains ${kw}) then set matchFlag to true
       end try
-    end if`
+    end if
+`
     : "";
   const expediteurCheck = o.expediteur
-    ? `    if matchFlag and (sender of m does not contain ${asStr(o.expediteur)}) then set matchFlag to false`
+    ? `    if matchFlag and (sender of m does not contain ${asStr(o.expediteur)}) then set matchFlag to false\n`
     : "";
-  const dateSetup = o.depuisJours !== undefined ? `  set cutoff to (current date) - (${o.depuisJours} * days)` : "";
-  const dateCheck = o.depuisJours !== undefined ? `    if matchFlag and ((date received of m) < cutoff) then set matchFlag to false` : "";
+  const dateSetup = o.depuisJours !== undefined ? `  set cutoff to (current date) - (${o.depuisJours} * days)\n` : "";
+  const dateCheck = o.depuisJours !== undefined ? `    if matchFlag and ((date received of m) < cutoff) then set matchFlag to false\n` : "";
+  // Fenêtre de scan bornée (les mails sont lus un par un). Plus courte si on
+  // fouille aussi le corps, plus coûteux à charger.
+  const scanBound = o.inclureCorps ? 80 : 150;
   return `
 tell application "Mail"
   set FS to (character id 31)
   set RS to (character id 30)
-${dateSetup}
-  set theMessages to messages of inbox
-  set total to count of theMessages
-  set scanMax to 400
-  if total < scanMax then set scanMax to total
-  set maxN to ${o.limite}
+${dateSetup}  set theMessages to messages of inbox
   set output to ""
   set found to 0
-  repeat with i from 1 to scanMax
+  set maxN to ${o.limite}
+  repeat with i from 1 to ${scanBound}
     if found ≥ maxN then exit repeat
-    set m to item i of theMessages
+    try
+      set m to item i of theMessages
+    on error
+      exit repeat
+    end try
     set matchFlag to false
     if (subject of m contains ${kw}) then set matchFlag to true
     if (not matchFlag) and (sender of m contains ${kw}) then set matchFlag to true
-${corpsCheck}
-${expediteurCheck}
-${dateCheck}
-    if matchFlag then
+${corpsCheck}${expediteurCheck}${dateCheck}    if matchFlag then
       set output to output & (id of m) & FS & (sender of m) & FS & (subject of m) & FS & ((date received of m) as string) & FS & (read status of m) & RS
       set found to found + 1
     end if
@@ -229,6 +246,12 @@ ${recipientsBlock({ to: o.destinataire, cc: o.cc, cci: o.cci })}
 ${senderLine(o.expediteur)}  ${o.action} newMsg
 end tell
 `;
+}
+
+// Vérifie l'accès à Mail sans toucher aux messages (très léger). Sert au
+// diagnostic : si cet appel répond, l'autorisation et le lancement de Mail sont OK.
+export function buildTesterAccesScript(): string {
+  return `tell application "Mail" to return name of every account`;
 }
 
 export function buildListerComptesScript(): string {
