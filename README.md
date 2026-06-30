@@ -56,6 +56,7 @@ Une fois installé, on parle simplement à Claude :
 
 | Outil | Description | Sécurité |
 |---|---|---|
+| `tester_acces` | Vérifie que Claude peut contrôler Mail (diagnostic, ne touche pas aux mails) | lecture seule |
 | `lister_mails` | Liste les derniers mails (filtre non lus / expéditeur) | lecture seule |
 | `rechercher_mails` | Recherche dans les mails récents (sujet, expéditeur, corps en option) | lecture seule |
 | `lire_mail` | Renvoie le contenu complet d'un mail | lecture seule |
@@ -83,6 +84,22 @@ Utilise d'abord `lister_comptes` pour connaître les adresses disponibles, puis
 précise `expediteur` si tu veux choisir le compte d'envoi.
 
 ---
+
+## 🆘 En cas de blocage (Mail qui rame ou se fige)
+
+Sur un **gros compte pro synchronisé serveur** (IMAP/Exchange), Mail peut être lent
+à répondre aux requêtes. Le MCP est conçu pour rester sûr dans ce cas :
+
+- **Demande « Teste l'accès à Mail »** (outil `tester_acces`) : c'est l'appel le plus
+  léger. S'il répond, l'autorisation et l'accès sont bons ; le souci vient du volume.
+- Le MCP a un **délai max** (20 s par défaut) : si Mail ne répond pas à temps, tu reçois
+  un message clair au lieu d'un blocage. Réessaie quelques secondes plus tard (Mail
+  finit souvent de se synchroniser).
+- Les lectures sont **bornées aux mails récents** : `lister_mails` et `rechercher_mails`
+  ne parcourent qu'une fenêtre récente de la boîte de réception, jamais toute la boîte.
+- Si Mail était figé : le quitter et le rouvrir, le laisser finir sa synchro, puis réessayer.
+- Pour allonger le délai (réseau lent) : variable d'environnement `MAIL_MCP_TIMEOUT_MS`
+  (en millisecondes).
 
 ## 🔧 Développement (pour reconstruire le bundle)
 
