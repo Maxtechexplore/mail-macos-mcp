@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "mail-macos-mcp",
   "display_name": "Mail macOS",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Pilote l'app Mail de macOS : lire, rechercher, créer des brouillons, envoyer et gérer ses mails depuis Claude.",
   "author": {
     "name": "Maxence"
@@ -17,6 +17,7 @@
     }
   },
   "tools": [
+    { "name": "tester_acces", "description": "Vérifie l'accès à Mail (diagnostic léger)" },
     { "name": "lister_mails", "description": "Liste les derniers mails (filtre non lus / expéditeur)" },
     { "name": "rechercher_mails", "description": "Recherche dans les mails récents" },
     { "name": "lire_mail", "description": "Lit le contenu complet d'un mail" },

@@ -23,30 +23,62 @@ export const RECORD_SEP = String.fromCharCode(30); // Record Separator (RS)
 export const AS_FIELD_SEP = "(character id 31)";
 export const AS_RECORD_SEP = "(character id 30)";
 
+/** Délai maximum par défaut (ms) avant d'abandonner un appel osascript. */
+const DEFAULT_TIMEOUT_MS = 20000;
+
 /**
  * Exécute un script AppleScript via `osascript` et renvoie sa sortie texte.
  * Le script est passé sur l'entrée standard pour éviter tout problème de
  * quoting sur les scripts multi-lignes.
+ *
+ * Un timeout dur (surchargable via `MAIL_MCP_TIMEOUT_MS`) tue le process si Mail
+ * ne répond pas : sur un gros compte serveur, une requête peut bloquer le thread
+ * principal de Mail. Sans ce garde-fou, Claude attendrait indéfiniment.
  */
 export function runOsascript(script: string): Promise<string> {
+  const parsed = Number(process.env.MAIL_MCP_TIMEOUT_MS);
+  const timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_TIMEOUT_MS;
   return new Promise((resolve, reject) => {
     const proc = spawn("osascript", []);
     let stdout = "";
     let stderr = "";
+    let settled = false;
+
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn();
+    };
+
+    const timer = setTimeout(() => {
+      finish(() => {
+        proc.kill("SIGKILL");
+        reject(
+          new MailError(
+            "L'opération a dépassé le délai d'attente. L'app Mail est peut-être en train de " +
+              "synchroniser un gros compte (mail pro/serveur). Réessaie dans un instant, ou " +
+              "réduis le volume demandé.",
+          ),
+        );
+      });
+    }, timeoutMs);
 
     proc.stdout.on("data", (chunk) => (stdout += chunk.toString()));
     proc.stderr.on("data", (chunk) => (stderr += chunk.toString()));
 
     proc.on("error", (err) =>
-      reject(new MailError(`Impossible de lancer osascript : ${err.message}`)),
+      finish(() => reject(new MailError(`Impossible de lancer osascript : ${err.message}`))),
     );
 
     proc.on("close", (code) => {
-      if (code === 0) {
-        resolve(stdout.replace(/\n$/, ""));
-      } else {
-        reject(new MailError(translateError(stderr.trim())));
-      }
+      finish(() => {
+        if (code === 0) {
+          resolve(stdout.replace(/\n$/, ""));
+        } else {
+          reject(new MailError(translateError(stderr.trim())));
+        }
+      });
     });
 
     proc.stdin.write(script);

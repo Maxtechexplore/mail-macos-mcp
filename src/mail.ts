@@ -10,6 +10,7 @@ import {
   buildComposeScript,
   buildRepondreScript,
   buildTransfererScript,
+  buildTesterAccesScript,
 } from "./scripts.js";
 
 export interface ResumeMail { id: number; expediteur: string; sujet: string; date: string; lu: boolean; }
@@ -45,6 +46,12 @@ export function parseComptes(raw: string): Compte[] {
 
 export async function listerComptes(): Promise<Compte[]> {
   return parseComptes(await runOsascript(buildListerComptesScript()));
+}
+
+/** Vérifie l'accès à Mail (léger). Renvoie les noms de comptes détectés. */
+export async function testerAcces(): Promise<string[]> {
+  const raw = await runOsascript(buildTesterAccesScript());
+  return raw ? raw.split(",").map((n) => n.trim()).filter((n) => n.length > 0) : [];
 }
 
 export async function rechercherMails(opts: { motCle: string; expediteur?: string; depuisJours?: number; inclureCorps: boolean; limite: number }): Promise<ResumeMail[]> {
